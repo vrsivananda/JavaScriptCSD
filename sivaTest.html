@@ -11,12 +11,26 @@
 	</body>
 	<script>
 		
+		//Number of iterations
+		var numberOfIterations = 1000;
+		
 		//Test for psychometric fit
 		var x = [0.1, 0.3, 0.5, 0.7, 0.9];
 		var y = [0.0, 0.05, 0.5, 0.95, 1.0];
 		
-		console.log(fitCumulativeGaussian(x,y));
+		newParameters = fitCumulativeGaussian(x,y);
+		console.log("newParameters: ");
+		console.log(newParameters);
+		console.log("k: ");
+		console.log(findK(x,y,newParameters));
+		console.log("optimized Mean And Slope:");
+		console.log(findMeanAndSlope(x,y));
 		
+		//----------------------------------------------------
+		//-----------FUNCTIONS BELOW THIS LINE----------------
+		//----------------------------------------------------
+		//Function to fit the general cumulative gaussian function to x and y data
+		//Output == [alpha, beta, gamma, lambda]
 		function fitCumulativeGaussian(xArray,yArray,initialGuessArray = [0.5,1,0,0]){
 			
 			
@@ -30,8 +44,8 @@
 			p[2] = gamma  = guess rate
 			p[3] = lambda = lapse rate
 			*/
-			//The psychometric fit function for cumulative gaussian
-			var cumulativeGaussianFunction = function(xArray,p){
+			//The psychometric fit function for cumulative gaussian to obtain all 4 parameters
+			function cumulativeGaussianFunctionGeneral (xArray,p){
 				return xArray.map(
 					function(xValue){
 						return ( p[2]+(1-p[2]-p[3])*0.5*(erfc((-p[1])*(xValue-p[0])/Math.sqrt(2))) );
@@ -40,14 +54,71 @@
 			};
 			
 			//Calculate the parameters with fminsearch
-			var output = jmat.fminsearch(cumulativeGaussianFunction,[0.5,1,0,0],x,y);
+			var optimizedParameters = jmat.fminsearch(cumulativeGaussianFunctionGeneral,[0.5,1,0,0],x,y,{maxIter:numberOfIterations});
 			
 			//Return the parameters
-			return output;
+			return optimizedParameters;
 				
 		}//End of fitCumulativeGaussian
-
 		
+		
+		//Function to find k (the scalar value) with the cumulative gaussian function
+		//Output == optimizedK
+		function findK(xArray, yArray, parametersArray, initialGuess = 1){
+			
+			//Load in parameters for easy handling
+			var alpha = parametersArray[0];
+			var beta = parametersArray[1];
+			var gamma = 0; //Set to zero because pegged that way in the methods
+			var lambda = 0; //Set to zero because pegged that way in the methods
+			
+			//The psychometric fit function for cumulative gaussian
+			function cumulativeGaussianFunctionForK (xArray,k){
+				return xArray.map(
+					function(xValue){
+						return ( gamma+(1-lambda-gamma)*0.5*(erfc((-beta/k)*(xValue-alpha)/Math.sqrt(2))) );
+					}
+				);
+			};
+			
+			//The initial guess value for k
+			var initialK = 1;
+			
+			//Calculate the parameters with fminsearch
+			var optimizedK = jmat.fminsearch(cumulativeGaussianFunctionForK,[initialK],x,y,{maxIter:numberOfIterations});
+			
+			//Return the the optimized k
+			return optimizedK;
+			
+		}//End of findK function
+
+		//Function to find mean and slope with the cumulative gaussian function
+		//Output == [mean, slope]
+		function findMeanAndSlope(xArray,yArray,initialGuessArray = [0.5,1]){
+			
+			//Load in parameters for easy handling
+			var alpha = initialGuessArray[0];
+			var beta = initialGuessArray[1];
+			var gamma = 0; //Set to zero because pegged that way in the methods
+			var lambda = 0; //Set to zero because pegged that way in the methods
+			
+			
+			//The psychometric fit function for cumulative gaussian to obtain the mean and slope
+			function cumulativeGaussianFunctionForMeanAndSlope (xArray,[alpha,beta]){
+				return xArray.map(
+					function(xValue){
+						return ( gamma+(1-lambda-gamma)*0.5*(erfc((-beta)*(xValue-alpha)/Math.sqrt(2))) );
+					}
+				);
+			};
+			
+			//Calculate the parameters with fminsearch
+			var optimizedMeanAndSlope = jmat.fminsearch(cumulativeGaussianFunctionForMeanAndSlope,[alpha, beta],x,y,{maxIter:numberOfIterations});
+			
+			//Return the optimized mean and slope
+			return optimizedMeanAndSlope;
+				
+		}//End of fitCumulativeGaussian
 
 
 
