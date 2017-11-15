@@ -6,10 +6,13 @@
 		<!--This exports script is needed for the erf function to work properly-->
 		<script> var exports = {}; </script>
 		<script src="MathFn/functions/erf.js"></script>
+		<script src="NormalDistribution/src/NormalDistribution.js"></script>
+		<script type="module">import NormalDistribution from "NormalDistribution/src/NormalDistribution.js";</script>
 	</head>
 	<body>
 	</body>
 	<script>
+		//NormDist still not working. import/export issue.
 		
 		//Number of iterations
 		var numberOfIterations = 1000;
@@ -26,9 +29,22 @@
 		console.log("optimized Mean And Slope:");
 		console.log(findMeanAndSlope(x,y));
 		
+		console.log("Xj:");
+		console.log(findXj(0.2,[0.5,2]));
+		
+		
+		const normDist = new NormalDistribution(0.5,2);
+		console.log("NORMDIST:");
+		console.log(normDist.probabilityBetween(0.4,0.6));
+		
+		
+		
+		
 		//----------------------------------------------------
 		//-----------FUNCTIONS BELOW THIS LINE----------------
 		//----------------------------------------------------
+		
+		
 		//Function to fit the general cumulative gaussian function to x and y data
 		//Output == [alpha, beta, gamma, lambda]
 		function fitCumulativeGaussian(xArray,yArray,initialGuessArray = [0.5,1,0,0]){
@@ -119,6 +135,22 @@
 			return optimizedMeanAndSlope;
 				
 		}//End of fitCumulativeGaussian
+		
+		//Function to find the Xj through the inverse confidence function
+		//Output == Xj
+		function findXj(Cj,[mean, slope]){
+			
+			var alpha = mean;
+			var beta = slope;
+			var gamma = 0; //Set to zero because pegged that way in the methods
+			var lambda = 0; //Set to zero because pegged that way in the methods
+			
+			//Calculate the Xj given the Cj
+			var Xj = invErfc(2*((Cj-gamma)/(1-gamma-lambda)))*(Math.sqrt(2)/(-beta)) + alpha;
+			
+			return Xj; 
+			
+		}//End of findXj
 
 
 
