@@ -6,20 +6,18 @@
 		<!--This exports script is needed for the erf function to work properly-->
 		<script> var exports = {}; </script>
 		<script src="MathFn/functions/erf.js"></script>
-		<script src="NormalDistribution/src/NormalDistribution.js"></script>
-		<script type="module">import NormalDistribution from "NormalDistribution/src/NormalDistribution.js";</script>
 	</head>
 	<body>
 	</body>
 	<script>
-		//NormDist still not working. import/export issue.
 		
 		//Number of iterations
 		var numberOfIterations = 1000;
+		var error = 0.0000000000000001; //How much to subtract/add to avoid infinity in the psychometric function (e.g. y = 1 or y = 0, then x = infinity or y = -infinity)
 		
 		//Test for psychometric fit
 		var x = [0.1, 0.3, 0.5, 0.7, 0.9];
-		var y = [0.0, 0.05, 0.5, 0.95, 1.0];
+		var y = [0.0, 0.05, 0.5, 0.99, 1.0];
 		
 		newParameters = fitCumulativeGaussian(x,y);
 		console.log("newParameters: ");
@@ -30,14 +28,59 @@
 		console.log(findMeanAndSlope(x,y));
 		
 		console.log("Xj:");
-		console.log(findXj(0.2,[0.5,2]));
+		console.log(calculateXj(0.3,[0,1,1]));
 		
 		
-		const normDist = new NormalDistribution(0.5,2);
-		console.log("NORMDIST:");
-		console.log(normDist.probabilityBetween(0.4,0.6));
+		console.log("probability between:");
+		console.log(calculateProbabilityBetween(-8,0,[-4,0.5]));
+		
+		var CjArray = makeCjArray([0.35,0.86,0.11,0.0,1.0],0.01);
+		console.log("CjArray:");
+		console.log(CjArray);
+		
+		var XjArray = makeXjArray(CjArray,[0,1,1]);
+		console.log("XjArray:");
+		console.log(XjArray);
+		
+		//-----CSD stuff------
+		
+		//Parameters
+		var initialGuessMean = 0.5;
+		var initialGuessSlope = 1;
+		var binSize = 1;
 		
 		
+		//Step A: Record data
+		var binaryArray = [];
+		var confidenceArray = [];
+		var stimulusArray = [];
+		
+		//Step B: fit binary data
+		var meanAndSlope = findMeanAndSlope(stimulusArray,binaryArray, [initialGuessMean, initialGuessSlope]);
+		var mean = meanAndSlope[0];
+		var slope = meanAndSlope[1];
+		
+		//Step C: fit the confidence data
+		var k = findK(stimulusArray, confidenceArray, [mean, slope]);
+		
+		//Step D: Set CjUpper and CjLower
+		var CjArray = makeCjArray(confidenceArray, binSize);
+		
+		//Step E: Choose initial values
+		//Values chosen above
+		
+		//Step F: Calculate XjLower and XjUpper
+		var XjArray = makeXjArray(CjArray, [mean, slope, k]);
+		
+		//Step G: Calculate probabilities
+		var probabilitiesArray = calculateProbabilityForStepG(XjArray, stimulusArray, [mean,slope]);
+		
+		//Step H: Sum the log likelihood
+		var sumLogLikelihood = sumLog(probabilitiesArray);
+		
+		//Step I : Repeat steps F to H to maximize log likelihood
+		var finalizedParameters = maximizeLogLikelihood
+		 
 		
 		
 		//----------------------------------------------------
@@ -45,46 +88,46 @@
 		//----------------------------------------------------
 		
 		
-		//Function to fit the general cumulative gaussian function to x and y data
-		//Output == [alpha, beta, gamma, lambda]
-		function fitCumulativeGaussian(xArray,yArray,initialGuessArray = [0.5,1,0,0]){
+		
+		//--------------------------
+		//---Optimizing Functions---
+		//--------------------------
+		
+		//Function to find mean and slope with the cumulative gaussian function
+		//Output == [mean, slope]
+		function findMeanAndSlope(xArray,yArray,[mean, slope] = [0.5,1]){
 			
+			//Load in parameters for easy handling
+			var alpha = mean;
+			var beta = slope;
+			var gamma = 0; //Set to zero because pegged that way in the methods
+			var lambda = 0; //Set to zero because pegged that way in the methods
 			
-			//p is the initial guess array, for easy handling
-			var p = initialGuessArray;
-			
-			/*
-			Parameters and what they mean:
-			p[0] = alpha  = bias/mean
-			p[1] = beta   = slope
-			p[2] = gamma  = guess rate
-			p[3] = lambda = lapse rate
-			*/
-			//The psychometric fit function for cumulative gaussian to obtain all 4 parameters
-			function cumulativeGaussianFunctionGeneral (xArray,p){
+			//The psychometric fit function for cumulative gaussian to obtain the mean and slope
+			function cumulativeGaussianFunctionForMeanAndSlope (xArray,[alpha,beta]){
 				return xArray.map(
 					function(xValue){
-						return ( p[2]+(1-p[2]-p[3])*0.5*(erfc((-p[1])*(xValue-p[0])/Math.sqrt(2))) );
+						return ( gamma+(1-lambda-gamma)*0.5*(erfc((-beta)*(xValue-alpha)/Math.sqrt(2))) );
 					}
 				);
 			};
 			
 			//Calculate the parameters with fminsearch
-			var optimizedParameters = jmat.fminsearch(cumulativeGaussianFunctionGeneral,[0.5,1,0,0],x,y,{maxIter:numberOfIterations});
+			var optimizedMeanAndSlope = jmat.fminsearch(cumulativeGaussianFunctionForMeanAndSlope,[alpha, beta],x,y,{maxIter:numberOfIterations});
 			
-			//Return the parameters
-			return optimizedParameters;
+			//Return the optimized mean and slope
+			return optimizedMeanAndSlope;
 				
 		}//End of fitCumulativeGaussian
 		
 		
 		//Function to find k (the scalar value) with the cumulative gaussian function
 		//Output == optimizedK
-		function findK(xArray, yArray, parametersArray, initialGuess = 1){
+		function findK(xArray, yArray, [mean, slope], initialGuess = 1){
 			
 			//Load in parameters for easy handling
-			var alpha = parametersArray[0];
-			var beta = parametersArray[1];
+			var alpha = mean;
+			var beta = slope;
 			var gamma = 0; //Set to zero because pegged that way in the methods
 			var lambda = 0; //Set to zero because pegged that way in the methods
 			
@@ -107,51 +150,213 @@
 			return optimizedK;
 			
 		}//End of findK function
-
-		//Function to find mean and slope with the cumulative gaussian function
-		//Output == [mean, slope]
-		function findMeanAndSlope(xArray,yArray,initialGuessArray = [0.5,1]){
-			
-			//Load in parameters for easy handling
-			var alpha = initialGuessArray[0];
-			var beta = initialGuessArray[1];
-			var gamma = 0; //Set to zero because pegged that way in the methods
-			var lambda = 0; //Set to zero because pegged that way in the methods
+		
+		
+		//Function to fit the general cumulative gaussian function to x and y data
+		//Output == [alpha, beta, gamma, lambda]
+		function fitCumulativeGaussian(xArray,yArray,initialGuessArray = [0.5,1,0,0]){
 			
 			
-			//The psychometric fit function for cumulative gaussian to obtain the mean and slope
-			function cumulativeGaussianFunctionForMeanAndSlope (xArray,[alpha,beta]){
+			//p is the initial guess array, for easy handling
+			var p = initialGuessArray;
+			
+			/*
+			Parameters and what they mean:
+			p[0] = alpha  = bias/mean
+			p[1] = beta   = slope
+			p[2] = gamma  = guess rate
+			p[3] = lambda = lapse rate
+			*/
+			//The psychometric fit function for cumulative gaussian to obtain all 4 parameters
+			function cumulativeGaussianFunctionGeneral(xArray,p){
 				return xArray.map(
 					function(xValue){
-						return ( gamma+(1-lambda-gamma)*0.5*(erfc((-beta)*(xValue-alpha)/Math.sqrt(2))) );
+						return ( p[2]+(1-p[2]-p[3])*0.5*(erfc((-p[1])*(xValue-p[0])/Math.sqrt(2))) );
 					}
 				);
 			};
 			
 			//Calculate the parameters with fminsearch
-			var optimizedMeanAndSlope = jmat.fminsearch(cumulativeGaussianFunctionForMeanAndSlope,[alpha, beta],x,y,{maxIter:numberOfIterations});
+			var optimizedParameters = jmat.fminsearch(cumulativeGaussianFunctionGeneral,[0.5,1,0,0],x,y,{maxIter:numberOfIterations});
 			
-			//Return the optimized mean and slope
-			return optimizedMeanAndSlope;
+			//Return the parameters
+			return optimizedParameters;
 				
 		}//End of fitCumulativeGaussian
 		
-		//Function to find the Xj through the inverse confidence function
+		
+		//---------------------------
+		//---Calculating Functions---
+		//---------------------------
+		
+		
+		//Function to calculate the Xj through the inverse confidence function
 		//Output == Xj
-		function findXj(Cj,[mean, slope]){
+		function calculateXj(Cj,[mean, slope, k]){
+			
+			var alpha = mean;
+			var beta = slope/k;
+			var gamma = 0; //Set to zero because pegged that way in the methods
+			var lambda = 0; //Set to zero because pegged that way in the methods
+			console.log(Cj);
+			//Calculate the Xj given the Cj
+			var Xj = invErfc(2*((Cj-gamma)/(1-gamma-lambda)))*(Math.sqrt(2)/(-beta)) + alpha;
+			
+			return Xj; 
+			
+		}//End of calculateXj
+		
+		
+		//Function to find the probability between two points on the gaussian function using the cumulative gaussian function
+		//output == probability
+		function calculateProbabilityBetween(x1, x2, [mean, slope]){
 			
 			var alpha = mean;
 			var beta = slope;
 			var gamma = 0; //Set to zero because pegged that way in the methods
 			var lambda = 0; //Set to zero because pegged that way in the methods
 			
-			//Calculate the Xj given the Cj
-			var Xj = invErfc(2*((Cj-gamma)/(1-gamma-lambda)))*(Math.sqrt(2)/(-beta)) + alpha;
+			//Find the difference between the probability of both 
+			var probability = calculateProbabilityFromCumulativeGaussian(x1, [mean,slope]) - calculateProbabilityFromCumulativeGaussian(x2, [mean,slope]);
 			
-			return Xj; 
+			//Return the positive probability (because x1 and x2 might be in opposite order)
+			return Math.abs(probability);
 			
-		}//End of findXj
-
+		}//End of calculateProbabilityBetween 
+		
+		//Function to calculate the y (probability) value from the cumulative gaussian
+		function calculateProbabilityFromCumulativeGaussian(x,[mean, slope]){
+			
+			var alpha = mean;
+			var beta = slope;
+			var gamma = 0; //Set to zero because pegged that way in the methods
+			var lambda = 0; //Set to zero because pegged that way in the methods
+			
+			return lambda + (1-lambda-gamma)*0.5*erfc((-beta*(x-alpha))/Math.sqrt(2));
+			
+		}//End of calculateYFromCumulativeGaussian
+		
+		
+		
+		
+		//Function to calculate the probability of this specific confidence probability judgment given the fitted psychometric function (Step G)
+		//Output == probabilitiesArray
+		function calculateProbabilityForStepG(XjArray, stimulusArray, [mean,slope]){
+			
+			//Declare an array to hold the probabilities
+			var probabilitiesArray = [];
+			
+			//Loop through the arrays to get the probabilities
+			for(var i = 0; i < XjArray.length; i++){
+				
+				//Set up the variables to be passed into the function
+				var newMean = mean + stimulusArray[i];
+				
+				//Calculate the probability
+				var probability = calculateProbabilityBetween(XjArray[i].XjUpper, XjArray[i].XjLower,[newMean, slope]);
+				
+				//Push the probability into the probability array
+				probabilitiesArray.push(probability);
+			}
+			
+			//Return the array
+			return probabilitiesArray;
+			
+		}//End of calculateProbabilityForStepG
+		
+		
+		//----------------------------
+		//---Housekeeping Functions---
+		//----------------------------
+		
+		
+		//Function to set bins for the confidence judgments
+		function makeCjArray(confidenceArray, binSize){
+			
+			//Create an array to hold the object with bins
+			var CjArray = [];
+			
+			//Loop through the confidence Array and designate the bins
+			for(var i = 0; i < confidenceArray.length; i++){
+				
+				//Store the original confidence judgment
+				var originalConfidenceJudgment = confidenceArray[i]
+				
+				//If the confidence judgments are at the limits, bring them back in to bin them fully
+				if(originalConfidenceJudgment === 0){
+					var newConfidenceJudgment = 0 + binSize/2 + error;
+				}
+				else if(originalConfidenceJudgment === 1){
+					var newConfidenceJudgment = 1 - binSize/2 - error;
+				}
+				else{
+					var newConfidenceJudgment = originalConfidenceJudgment;
+				}
+				
+				
+				//Set the bin limits
+				var upperBinLimit = newConfidenceJudgment + binSize/2;
+				var lowerBinLimit = newConfidenceJudgment - binSize/2;
+				
+				//Store it in an object
+				var CjObject = {
+					confidenceResponse: originalConfidenceJudgment,
+					CjUpper: upperBinLimit,
+					CjLower: lowerBinLimit
+				};
+				
+				//Push the object with all the info into the bin Array
+				CjArray.push(CjObject);
+			}
+			
+			//Return the array
+			return CjArray;
+			
+		}//End of makeCjArray
+		
+		//Function to make the XjArray from the CjArray (Step F)
+		function makeXjArray(CjArray,[mean, slope, k]){
+			
+			var mean = 0; //Set to zero because pegged that way in the methods
+			
+			//Declare an XjArray to hold the Xj Objects
+			var XjArray = []
+			
+			//Loop throught he bins Array to get the Xj values
+			for (var i = 0; i < CjArray.length; i++){
+				
+				//Find the Xj upper and lower
+				var XjUpper = calculateXj(CjArray[i].CjUpper, [mean, slope, k]);
+				var XjLower = calculateXj(CjArray[i].CjLower, [mean, slope, k]);
+				
+				//Put them in an object
+				var XjObject = {
+					XjLower: XjLower,
+					XjUpper: XjUpper
+				};
+				
+				//Push it into the array
+				XjArray.push(XjObject);
+			}
+			
+			//Return the array
+			return XjArray;
+			
+		} //End of calculateXjArray
+		
+		//Function to sum up the logarithm of all the probabilities (Step H)
+		function sumLog(probabilitiesArray){
+			
+			//Sum up the log of all the elements in the array
+			var sum = probabilitiesArray.reduce(
+				function(accumulator, element){
+					return accumulator + Math.log(element);
+				}, 0);
+			
+			//Return the sum
+			return sum;
+		
+		}//End of sumLog
 
 
 	</script>
