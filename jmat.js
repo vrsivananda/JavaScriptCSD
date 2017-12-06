@@ -709,12 +709,13 @@ fminsearch:function(fun,Parm0,x,y,Opt){// fun = function(x,Parm)
 			P1=jmat.cloneVector(P0);
 			P1[j]+=step[j];
 			if(funParm(P1)<funParm(P0)){ // parm value going in the righ direction
-				step[j]=1.2*step[j]; // go a little faster
+		//		step[j]=1.05*step[j]; // go a little faster
 				P0=jmat.cloneVector(P1);
 			}
 			else{
 				step[j]=-(0.5*step[j]); // reverse and go slower
-			}	
+		//		step[j]=-step[j]; //[sivaHack]
+			}
 		}
 		if(Opt.display){if(i>(Opt.maxIter-10)){console.log(i+1,funParm(P0),P0)}}
 	}

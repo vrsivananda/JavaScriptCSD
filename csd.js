@@ -1,23 +1,6 @@
-<!doctype html>
-<html>
-	<head>
-		<!--Include the jmat library-->
-		<script src="jmat.js"> </script>
-		<!--This exports script is needed for the erf function to work properly-->
-		<script> var exports = {}; </script>
-		<script src="MathFn/functions/erf.js"></script>
-		<!--Imported data from the subjects-->
-		<script src="data1.js"></script>
-		<script src="data2.js"></script>
-	</head>
-	<body>
-		<canvas id="myCanvas">
-		</canvas>
-	</body>
-	<script>
 		
 		//Number of iterations
-		var numberOfIterations = 1000;
+		var numberOfIterations = 10000;
 		var error = 0.0000000000000001; //How much to subtract/add to avoid infinity in the psychometric function (e.g. y = 1 or y = 0, then x = infinity or y = -infinity)
 		var displayIterations = false;
 
@@ -515,7 +498,3 @@
 			}
 			
 		}//End of plotCurve
-
-
-	</script>
-</html>

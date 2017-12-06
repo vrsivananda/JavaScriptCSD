@@ -1,14 +1,15 @@
 <!doctype html>
 <html>
 	<head>
+		<!--Include the numericJS library-->
+		<script src="numericjs_optimization.js"> </script>
 		<!--Include the jmat library-->
 		<script src="jmat.js"> </script>
 		<!--This exports script is needed for the erf function to work properly-->
 		<script> var exports = {}; </script>
 		<script src="MathFn/functions/erf.js"></script>
-		<!--Imported data from the subjects-->
+		<!--Imported data from the subject1-->
 		<script src="data1.js"></script>
-		<script src="data2.js"></script>
 	</head>
 	<body>
 		<canvas id="myCanvas">
@@ -16,8 +17,9 @@
 	</body>
 	<script>
 		
-		//Number of iterations
-		var numberOfIterations = 1000;
+		//Optimization parameters
+		var numberOfIterations = 10000; //The maximum number of iterations
+		var minGradientStepSize = 0.001; //The minimum step size for the optimization function before it terminates
 		var error = 0.0000000000000001; //How much to subtract/add to avoid infinity in the psychometric function (e.g. y = 1 or y = 0, then x = infinity or y = -infinity)
 		var displayIterations = false;
 
@@ -25,7 +27,7 @@
 		//-----CSD stuff------
 		
 		//Parameters
-		var initialGuessMean = 0;
+		var initialGuessMean = 0.5;
 		var initialGuessSlope = 1;
 		var initialGuessK = 1;
 		var binSize = 0.01;
@@ -38,7 +40,7 @@
 		
 		
 		//Step A: Record data
-		[confidenceArray, stimulusArray] = [confidenceArray2, stimulusArray2];//makeConfidenceAndStimulusArrays(xRange, [actualMean, actualSlope]);
+		[confidenceArray, stimulusArray] = [confidenceArray1, stimulusArray1];//makeConfidenceAndStimulusArrays(xRange, [actualMean, actualSlope]);
 		console.log("confidenceArray: ");
 		console.log(confidenceArray);
 		console.log("stimulusArray: ");
@@ -55,6 +57,8 @@
 		console.log("meanAndSlope: ");
 		console.log(meanAndSlope);
 		
+		plotCurve(meanAndSlope);
+		
 		var mean = meanAndSlope[0];
 		var slope = meanAndSlope[1];
 		
@@ -62,8 +66,6 @@
 		var k = findK(stimulusArray, confidenceArray, [mean, slope], initialGuessK)[0];
 		console.log("k: ");
 		console.log(k);
-		
-		plotCurve([mean,slope/k]);
 		
 		//Step D: Set CjUpper and CjLower
 		var CjArray = makeCjArray(confidenceArray, binSize);
@@ -75,9 +77,6 @@
 		var finalizedParameters = maximizeLogLikelihood(CjArray,[mean,slope,k], stimulusArray);
 		console.log("finalizedParameters: ");
 		console.log(finalizedParameters);
-		
-		var finalMean = finalizedParameters[0];
-		var finalSlope = finalizedParameters[1];
 		
 		
 		
@@ -102,18 +101,19 @@
 			var lambda = 0; //Set to zero because pegged that way in the methods
 			
 			//The psychometric fit function for cumulative gaussian to obtain the mean and slope
-			function cumulativeGaussianFunctionForMeanAndSlope (xArray,[alpha,beta]){
-			//	console.log("mean: " + alpha);
-			//	console.log("slope: " + beta);
-				return xArray.map(
+			function cumulativeGaussianFunctionForMeanAndSlope ([alpha,beta]){
+				console.log("mean: " + alpha);
+				console.log("slope: " + beta);
+				var predictedYArray = xArray.map(
 					function(xValue){
 						return ( gamma+(1-lambda-gamma)*0.5*(erfc((-beta)*(xValue-alpha)/Math.sqrt(2))) );
 					}
 				);
+				return calculateAbsoluteDifference(predictedYArray,yArray);
 			}
 			
 			//Calculate the parameters with fminsearch
-			var optimizedMeanAndSlope = jmat.fminsearch(cumulativeGaussianFunctionForMeanAndSlope,[alpha, beta],xArray,yArray,{maxIter:numberOfIterations, display: displayIterations});
+			var optimizedMeanAndSlope = numeric.uncmin(cumulativeGaussianFunctionForMeanAndSlope,[alpha, beta]).solution;
 			
 			//Return the optimized mean and slope
 			return optimizedMeanAndSlope;
@@ -440,6 +440,28 @@
 			
 		}//End of makeBinary
 		
+		//Function to subtract one array from another, make the elements positive, and add them up to get the total absolute difference
+		function calculateAbsoluteDifference(array1, array2){
+			
+			//Declare a new array to hold the difference
+			var newArray = [];
+			
+			//For loop to go through every element
+			for (var i = 0; i < array1.length; i++){
+				//Subtract the respective element, take the modulus, and push it into the new array
+				newArray.push(Math.abs(array1[i]-array2[i]));
+			}
+			
+			//Calculate the new difference
+			var difference = newArray.reduce((a,b)=>a+b,0);
+			
+			console.log("Difference: " + difference);
+			console.log("---------------------------");
+			
+			//Return the difference
+			return difference;
+		} 
+		
 		//Function to plot the points on the canvas
 		function plotPoints(stimulusArray, confidenceArray){
 			var canvas = document.getElementById("myCanvas");
@@ -474,7 +496,6 @@
 			}
 		}
 		
-				
 		//Function to plot the curve on the canvas
 		function plotCurve([mean, slope]){
 			
