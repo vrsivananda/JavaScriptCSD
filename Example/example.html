@@ -4,13 +4,13 @@
         <title>CSD Example Experiment</title>
         
         <!--Add in the CSD file-->
-        <script src="csd.js"></script>
+        <script src="../csd.js"></script>
         <!--Include the jmat library-->
-        <script src="jmat.js"></script>
+        <script src="../jmat.js"></script>
         <!--Include the erf library-->  
         <!--This exports script is needed for the erf function to work properly-->
         <script> var exports = {}; </script>  
-        <script src="MathFn/functions/erf.js"></script>
+        <script src="../MathFn/functions/erf.js"></script>
         
         <!--jsPsych necessities start-->
         <script src="jsPsych-6.0.1/jspsych.js"></script>
@@ -26,15 +26,6 @@
     <body>
     </body>
     <script>
-    
-        //Data switches
-        var savingLocally = 0; // 0: Nothing.       1: Download CSV file
-        var displayData = 0;   // 0: Nothing.       1: Display data on browser
-        
-        
-        ///////////////////////////////////////////////////////////////
-        //-----------------Your code below this line-----------------//
-
         
         //Create the CSD object
         myCSD = new csd();
@@ -43,8 +34,6 @@
         var optimizedMu;
         var optimizedSigma;
         var optimizedK;
-        
-        
         
         // Make the instructions
         var instructions = {
@@ -128,28 +117,10 @@
         timeline.push(intro_to_CSD);
         timeline.push(runCSD);
         timeline.push(outtro_to_CSD);
-        
-        
-        
-        
-        
-        //-----------------Your code above this line-----------------//
-        ///////////////////////////////////////////////////////////////
-
-
-        //---------Run the experiment---------
     
         //Initiate the experiment
         jsPsych.init({
-          timeline: timeline,
-          on_finish: function(){ //Execute this when the experiment finishes
-            if(savingLocally){
-              jsPsych.data.get().localSave('csv','testSave.csv'); //Save the data locally in a .csv file
-            }
-            if(displayData){
-              jsPsych.data.displayData(); //Display the data onto the browser screen
-            }
-          }
+          timeline: timeline
         });
 
 

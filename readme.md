@@ -9,7 +9,7 @@ We need to include 3 scripts in the <head> element of the html file for CSD to w
     * This is the only file that is written by me. This is the core of the CSD model.
 2. `<script src="jmat.js"></script>`
     * This is for many of the math optimization functions, obtained from Github user [jonasalmeida](https://github.com/jonasalmeida/jmat/blob/gh-pages/jmat.js)
-3. `<script> var exports = {}; </script>` 
+3. `<script> var exports = {}; </script>`<br> 
    `<script src="MathFn/functions/erf.js"></script>`
     * The *exports* script above is also necessary for the erf.js functions to be exported into your html script
     * This is for the erf function, obtained from Github user [AndreasMadsen](https://github.com/AndreasMadsen/mathfn)
@@ -41,7 +41,7 @@ To modify the parameters, simply create an object with the parameters as keys an
 Example of creating a CSD object with modified parameters:
 ```javascript
 //Create a parameter object
-myParameters = {
+var myParameters = {
 	number_of_iterations: 5000,
 	confidence_resolution: 0.05
 };
@@ -56,7 +56,7 @@ Once the CSD object is created, you will need to pass in data to the CSD object.
 
 There are two ways of doing this:
 
-####(1) Trial-by-trial
+#### (1) Trial-by-trial
 You can pass in data trial-by-trial with the CSD object's `addData` method. The method accepts two arguments: the confidence judgment, and the stimulus intensity.
 ```javascript
 //Example confidence judgment and stimulus intensity
@@ -68,7 +68,7 @@ myCSD.addData(confidenceJudgment, stimulusIntensity);
 ```
 You can keep adding the confidence judgment and stimulus intensity trial-by-trial as the CSD object will keep track of the confidence judgments and stimulus intensities through an internal array.
 
-####(1) All at once:
+#### (2) All at once:
 Alternatively, you can pass in data all at once using the same `addData` method.
 ```javascript
 //Example confidence judgment and stimulus intensity arrays
