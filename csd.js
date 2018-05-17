@@ -37,7 +37,7 @@ function csd(dataObject){
 		confidenceArray.push(confidenceResponse);
 	}
 	
-	plotPoints(stimulusArray,confidenceArray);
+	//plotPoints(stimulusArray,confidenceArray);
 	
 	//Function to start the CSD procedure
 	this.startCSD = function(newConfidenceArray = "noData", newStimulusArray = "noData"){
@@ -64,7 +64,7 @@ function csd(dataObject){
 		console.log("k: ");
 		console.log(k);
 		
-		plotCurve([mean,slope/k]);
+		//plotCurve([mean,slope/k]);
 		
 		//Step D: Set CjUpper and CjLower
 		var CjArray = makeCjArray(confidenceArray, binSize);

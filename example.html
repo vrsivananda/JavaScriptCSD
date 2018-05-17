@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CSD Example Experiment</title>
+        
+        <!--Add in the CSD file-->
+        <script src="csd.js"></script>
+        <!--Include the jmat library-->
+        <script src="jmat.js"></script>
+        <!--Include the erf library-->  
+        <!--This exports script is needed for the erf function to work properly-->
+        <script> var exports = {}; </script>  
+        <script src="MathFn/functions/erf.js"></script>
+        
+        <!--jsPsych necessities start-->
+        <script src="jsPsych-6.0.1/jspsych.js"></script>
+        <link href="jsPsych-6.0.1/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+        <!--jsPsych necessities end-->
+        
+        <!--jsPsych plugins start-->
+        <script src="jsPsych-6.0.1/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jsPsych-6.0.1/plugins/jspsych-html-slider-response.js"></script>
+        <script src="jsPsych-6.0.1/plugins/jspsych-call-function.js"></script>
+        <!--jsPsych plugins end-->
+    </head>
+    <body>
+    </body>
+    <script>
+    
+        //Data switches
+        var savingLocally = 0; // 0: Nothing.       1: Download CSV file
+        var displayData = 0;   // 0: Nothing.       1: Display data on browser
+        
+        
+        ///////////////////////////////////////////////////////////////
+        //-----------------Your code below this line-----------------//
+
+        
+        //Create the CSD object
+        myCSD = new csd();
+        
+        //Variables for CSD output
+        var optimizedMu;
+        var optimizedSigma;
+        var optimizedK;
+        
+        
+        
+        // Make the instructions
+        var instructions = {
+          type: 'html-keyboard-response',
+          stimulus: 'Welcome to the example! <br/> There are 20 trials, and your job is to slide a slider to indicate how confident you are that the "O" presented is smaller or larger than the "O" below. <br/><br/><br/> <span style="font-size:70px">O</span> <br/><br/> Try your best to remember the size of the "O" as it will not be presented during the trials. <br/><br/> Press the spacebar to continue.'
+        };
+        
+        //Make the diffrent size stimuli
+        function createStimuli(){
+          
+          //Array to hold the stimuli objects
+          var stimuli = [];
+          
+          //For loop to create the trials (one trial per loop)
+          for(let i = 0; i < 20; i++){
+            
+            //Calculate the font size for this trial
+            let fontSize = (50+(i*2))
+            
+            //Create the stimuli for this trial
+            let currentStimulus = '<span style="font-size: ' + fontSize + 'px">O</span>';
+            
+            //Wrap it in an object and push it into the stimuli array
+            stimuli.push(
+              {
+                stimulus: currentStimulus,
+                data:{fontSize: fontSize}
+              }
+            ); 
+          
+          }//End of for loop
+          
+          //Shuffle the stimuli to randomize the trials
+          stimuli = jsPsych.randomization.shuffleNoRepeats(stimuli);
+          
+          //Return the array
+          return stimuli;
+          
+        }//End of trials_block function
+        
+        //The trials block that contains all 20 trials
+        var trials_block = {
+          type: 'html-slider-response',
+          timeline: createStimuli(),
+          labels: ['100% Certain <br/> Smaller', '50%|50%', '100% Certain <br/> Larger'],
+          prompt: 'Slide the slider based on how confident you are that the "O" above is smaller or larger than the original "O".<br/>',
+          on_finish: function(dataObject){
+            //Add in the data to the CSD object trial-by-trial
+            myCSD.addData(dataObject.response/100, dataObject.fontSize-70);
+          }
+        };
+        
+        //Make the intro to CSD 
+        var intro_to_CSD = {
+          type: 'html-keyboard-response',
+          stimulus: 'Great! All the responses are now loaded into the CSD object.<br/><br/> Press the spacebar to start the CSD algorithm and see what the output is. <br/><br/> This might take a few seconds.'
+        }; 
+        
+        //Make the trial that runs the CSD
+        var runCSD = {
+          type: 'call-function',
+          func: function(){
+            [optimizedMu, optimizedSigma, optimizedK] = myCSD.startCSD();
+          }
+        };
+        
+        //Make the outtro to CSD 
+        var outtro_to_CSD = {
+          type: 'html-keyboard-response',
+          stimulus: function(){
+            return 'Great! <br/> Here are the outputs of the CSD model based on your data: <br/><br/> Mu:' + optimizedMu + '<br/><br/> Sigma: ' + optimizedSigma;
+          }
+        };
+        
+        //Timeline array to be fed into the jsPsych.init function
+        var timeline = [];
+        
+        //Push the trials into the timeline array
+        timeline.push(instructions);
+        timeline.push(trials_block);
+        timeline.push(intro_to_CSD);
+        timeline.push(runCSD);
+        timeline.push(outtro_to_CSD);
+        
+        
+        
+        
+        
+        //-----------------Your code above this line-----------------//
+        ///////////////////////////////////////////////////////////////
+
+
+        //---------Run the experiment---------
+    
+        //Initiate the experiment
+        jsPsych.init({
+          timeline: timeline,
+          on_finish: function(){ //Execute this when the experiment finishes
+            if(savingLocally){
+              jsPsych.data.get().localSave('csv','testSave.csv'); //Save the data locally in a .csv file
+            }
+            if(displayData){
+              jsPsych.data.displayData(); //Display the data onto the browser screen
+            }
+          }
+        });
+
+
+
+    </script>
+</html>
