@@ -56,16 +56,16 @@ function csd(dataObject){
 		
 		//Step B: fit binary data
 		var meanAndSlope = findMeanAndSlope(stimulusArray, binaryArray, [initialGuessMean, initialGuessSlope]);
-		console.log("meanAndSlope: ");
-		console.log(meanAndSlope);
 		
 		var mean = meanAndSlope[0];
 		var slope = meanAndSlope[1];
 		
+		console.log("mean: " + mean);
+		console.log("slope: " + slope);
+		
 		//Step C: fit the confidence data
 		var k = findK(stimulusArray, confidenceArray, [mean, slope], initialGuessK)[0];
-		console.log("k: ");
-		console.log(k);
+		console.log("k: " + k);
 		
 		//plotCurve([mean,slope/k]);
 		
@@ -78,11 +78,14 @@ function csd(dataObject){
 		//Steps F to I: Maximize the log likelihood
 		var finalizedParameters = maximizeLogLikelihood(CjArray,[mean,slope,k], stimulusArray);
 		console.log("finalizedParameters: ");
-		console.log(finalizedParameters);
 		
 		var finalMean = finalizedParameters[0];
 		var finalSlope = finalizedParameters[1];
 		var finalK = finalizedParameters[2];
+		
+		console.log("finalMean" + finalMean);
+		console.log("finalSlope" + finalSlope);
+		console.log("finalK" + finalK);
 		
 		//Return the parameters in the form of [finalMu, finalSigma, finalK]
 		return [finalMean, 1/finalSlope, finalK];
