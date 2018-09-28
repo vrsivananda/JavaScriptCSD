@@ -42,6 +42,9 @@ function csd(dataObject){
 	//Function to start the CSD procedure
 	this.startCSD = function(newConfidenceArray = "noData", newStimulusArray = "noData"){
 		
+		console.log("----------------");
+		console.log("CSD output:");
+		
 		//If the user passed in the data for the confidence array, then we use those arrays
 		if(newConfidenceArray !== "noData" || newStimulusArray !== "noData"){
 			confidenceArray = newConfidenceArray;

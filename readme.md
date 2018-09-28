@@ -22,7 +22,7 @@ To use the CSD model to estimate the psychometric function parameters (Mu and Si
 
 Example of creating a general CSD object (initialized with all default values):
 ```javascript
-var myCSD = new CSD();
+var myCSD = new csd();
 ```
 The CSD object comes with certain default parameter values described in the table below. Instructions on how to modify the parameters are below the table. Parameter values do not have to be filled in if default values are acceptable.
 
@@ -47,7 +47,7 @@ var myParameters = {
 };
 
 //Pass it into the CSD constructor as an argument
-var myCSD = new CSD(myParameters);
+var myCSD = new csd(myParameters);
 ```
 
 ### Passing in data to the CSD Object
