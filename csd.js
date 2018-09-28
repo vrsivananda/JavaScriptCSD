@@ -83,9 +83,9 @@ function csd(dataObject){
 		var finalSlope = finalizedParameters[1];
 		var finalK = finalizedParameters[2];
 		
-		console.log("finalMean" + finalMean);
-		console.log("finalSlope" + finalSlope);
-		console.log("finalK" + finalK);
+		console.log("finalMean: " + finalMean);
+		console.log("finalSlope: " + finalSlope);
+		console.log("finalK: " + finalK);
 		
 		//Return the parameters in the form of [finalMu, finalSigma, finalK]
 		return [finalMean, 1/finalSlope, finalK];
