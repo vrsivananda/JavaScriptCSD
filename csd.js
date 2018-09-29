@@ -57,17 +57,17 @@ function csd(dataObject){
 		//Step B: fit binary data
 		var meanAndSlope = findMeanAndSlope(stimulusArray, binaryArray, [initialGuessMean, initialGuessSlope]);
 		
-		var mean = meanAndSlope[0];
-		var slope = meanAndSlope[1];
+		var initialMu = meanAndSlope[0];
+		var initialSlope = meanAndSlope[1];
 		
-		console.log("mean: " + mean);
-		console.log("slope: " + slope);
+		console.log("initialMu: " + initialMu);
+		console.log("initialSlope: " + initialSlope);
 		
 		//Step C: fit the confidence data
-		var k = findK(stimulusArray, confidenceArray, [mean, slope], initialGuessK)[0];
-		console.log("k: " + k);
+		var initialK = findK(stimulusArray, confidenceArray, [initialMu, initialSlope], initialGuessK)[0];
+		console.log("initialK: " + initialK);
 		
-		//plotCurve([mean,slope/k]);
+		//plotCurve([initialMu,initialSlope/initialK]);
 		
 		//Step D: Set CjUpper and CjLower
 		var CjArray = makeCjArray(confidenceArray, binSize);
@@ -76,19 +76,19 @@ function csd(dataObject){
 		//Values chosen above
 		
 		//Steps F to I: Maximize the log likelihood
-		var finalizedParameters = maximizeLogLikelihood(CjArray,[mean,slope,k], stimulusArray);
+		var finalizedParameters = maximizeLogLikelihood(CjArray,[initialMu,initialSlope,initialK], stimulusArray);
 		console.log("finalizedParameters: ");
 		
-		var finalMean = finalizedParameters[0];
+		var finalMu = finalizedParameters[0];
 		var finalSlope = finalizedParameters[1];
 		var finalK = finalizedParameters[2];
 		
-		console.log("finalMean: " + finalMean);
+		console.log("finalMu: " + finalMu);
 		console.log("finalSlope: " + finalSlope);
 		console.log("finalK: " + finalK);
 		
-		//Return the parameters in the form of [finalMu, finalSigma, finalK]
-		return [finalMean, 1/finalSlope, finalK];
+		//Return the parameters in the form of [initialMean, initialSigma, initialK, finalMu, finalSigma, finalK]
+		return [initialMu, 1/initialSlope, initialK, finalMu, 1/finalSlope, finalK];
 				
 	}//End of this.startCSD method
 	
@@ -115,7 +115,7 @@ function csd(dataObject){
 		
 		console.log("coherence:");
 		console.log(xArray);
-		console.log("confidenceJudgment");
+		console.log("binaryJudgment:");
 		console.log(yArray);
 		
 		//The psychometric fit function for cumulative gaussian to obtain the mean and slope
